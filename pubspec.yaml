@@ -34,10 +34,12 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
-  scryfall_api: ^2.1.0
+  # scryfall_api: ^2.1.0
   provider: ^6.1.2
   sqflite: ^2.4.2
   shared_preferences: ^2.5.2
+  scryfall_api:
+    path: ../scryfall_api
 
 dev_dependencies:
   flutter_test:
@@ -60,9 +62,6 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
-
-  assets:
-    - assets/db.json
 
   # To add assets to your application, add an assets section, like this:
   # assets:

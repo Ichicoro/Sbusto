@@ -243,10 +243,9 @@ packages:
   scryfall_api:
     dependency: "direct main"
     description:
-      name: scryfall_api
-      sha256: c7d480376c6878bb2f11daa340aa9645d8e5c1bd4d11fdceb3962ba9d923450c
-      url: "https://pub.dev"
-    source: hosted
+      path: "../scryfall_api"
+      relative: true
+    source: path
     version: "2.1.0"
   shared_preferences:
     dependency: "direct main"

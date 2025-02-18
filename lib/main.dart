@@ -144,12 +144,16 @@ class _MyHomePageState extends State<MyHomePage> {
             );
           } else {
             return Center(
-              child: FilledButton(
-                child: const Text("Load cards"),
-                onPressed: () {
-                  store.loadCards();
-                },
-              ),
+              child: Column(children: [
+                FilledButton(
+                    child: const Text(
+                      "Load cards (from ${store.areCardsCached ? 'cache' : 'network'})",
+                    ),
+                    onPressed: () {
+                      store.loadCards();
+                    },
+                  )
+              ],),
             );
           }
         }
