@@ -1,28 +1,33 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:sbusto/card_data_store.dart';
+import 'package:sbusto/debug_card_view.dart';
 
 void main() {
   runApp(
     ChangeNotifierProvider(
       create: (context) => CardDataStoreModel(),
-      child: const MyApp(),
+      child: MyApp(),
     ),
   );
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  MyApp({super.key});
+
+  ThemeData baseTheme = ThemeData(
+    colorScheme: ColorScheme.fromSeed(seedColor: Colors.orange),
+  );
 
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Sbusto',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.orange),
-      ),
+      theme: baseTheme.copyWith(textTheme: GoogleFonts.rubikTextTheme()),
       home: const NavigationWrapper(),
+      themeMode: ThemeMode.dark,
     );
   }
 }
@@ -39,10 +44,11 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
 
   @override
   Widget build(BuildContext context) {
+    ThemeData theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Sbusto'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        backgroundColor: theme.colorScheme.inversePrimary,
         actions: [
           IconButton(
             icon: const Icon(Icons.settings_rounded),
@@ -53,7 +59,10 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
                 MaterialPageRoute(
                   builder: (context) {
                     return Scaffold(
-                      appBar: AppBar(title: Text('Settings')),
+                      appBar: AppBar(
+                        title: Text('Settings'),
+                        backgroundColor: theme.colorScheme.inversePrimary,
+                      ),
                       body: Center(child: Text('Settings Page')),
                     );
                   },
@@ -130,6 +139,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    ThemeData theme = Theme.of(context);
     return Consumer<CardDataStoreModel>(
       builder: (context, store, child) {
         if (store.catalog == null) {
@@ -144,16 +154,24 @@ class _MyHomePageState extends State<MyHomePage> {
             );
           } else {
             return Center(
-              child: Column(children: [
-                FilledButton(
-                    child: const Text(
+              child: Column(
+                children: [
+                  FilledButton(
+                    child: Text(
                       "Load cards (from ${store.areCardsCached ? 'cache' : 'network'})",
                     ),
                     onPressed: () {
                       store.loadCards();
                     },
-                  )
-              ],),
+                  ),
+                  FilledButton(
+                    onPressed: () {
+                      store.clearCatalogFromPrefs();
+                    },
+                    child: Text("Reset cache"),
+                  ),
+                ],
+              ),
             );
           }
         }
@@ -163,20 +181,24 @@ class _MyHomePageState extends State<MyHomePage> {
             for (final card in store.catalog!) ...[
               ListTile(
                 title: Text(card.name),
-                // subtitle: Text(card.type),
-                // leading: Image.network(card.imageUris?.png.toString() ?? ""),
+                subtitle: Text(card.oracleText ?? ""),
+                leading: Image.network(card.imageUris?.png.toString() ?? ""),
+                onTap: () {
+                  print("Tapped on ${card.name}");
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) {
+                        return DebugCardView(card: card);
+                      },
+                    ),
+                  );
+                },
               ),
               const Divider(),
             ],
           ],
         );
-
-        // return Row(
-        //   mainAxisAlignment: MainAxisAlignment.center,
-        //   children: <Widget>[
-        //     Text('ziopera', style: Theme.of(context).textTheme.headlineMedium),
-        //   ],
-        // );
       },
     );
   }

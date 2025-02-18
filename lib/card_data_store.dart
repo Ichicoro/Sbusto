@@ -20,9 +20,10 @@ class CardDataStoreModel extends ChangeNotifier {
   CardDataStoreModel() {
     checkCardCache().then((value) {
       _areCardsCached = value;
-      // notifyListeners();
+      notifyListeners();
     });
   }
+
   void _saveCatalogToPrefs() async {
     if (_catalog == null) {
       return;
@@ -52,6 +53,8 @@ class CardDataStoreModel extends ChangeNotifier {
   void clearCatalogFromPrefs() async {
     final prefs = await SharedPreferences.getInstance();
     prefs.remove("cards");
+    _areCardsCached = false;
+    notifyListeners();
   }
 
   void loadCards() async {
@@ -68,7 +71,10 @@ class CardDataStoreModel extends ChangeNotifier {
       bool isFinished = false;
       int idx = 0;
       while (!isFinished) {
-        final response = await client.searchCards("set:AFR", page: idx++);
+        final response = await client.searchCards(
+          "game:paper set:AFR",
+          page: idx++,
+        );
         final catalog = response.data;
         _catalog ??= List<MtgCard>.empty(growable: true);
         _catalog?.addAll(catalog);
