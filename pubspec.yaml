@@ -41,6 +41,8 @@ dependencies:
   scryfall_api:
     path: ../scryfall_api
   google_fonts: ^6.2.1
+  collection: ^1.19.1
+  path: ^1.9.1
 
 dev_dependencies:
   flutter_test:

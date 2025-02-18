@@ -1,8 +1,13 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:sbusto/card_data_store.dart';
 import 'package:sbusto/debug_card_view.dart';
+
+import 'settings_page.dart';
 
 void main() {
   runApp(
@@ -14,20 +19,28 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
-  MyApp({super.key});
-
-  ThemeData baseTheme = ThemeData(
-    colorScheme: ColorScheme.fromSeed(seedColor: Colors.orange),
-  );
+  const MyApp({super.key});
 
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Sbusto',
-      theme: baseTheme.copyWith(textTheme: GoogleFonts.rubikTextTheme()),
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.red,
+          brightness: Brightness.dark,
+        ),
+        textTheme: GoogleFonts.rubikTextTheme(Typography.whiteMountainView),
+        cardTheme: CardTheme(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          margin: EdgeInsets.all(10),
+        ),
+      ),
       home: const NavigationWrapper(),
-      themeMode: ThemeMode.dark,
+      themeMode: ThemeMode.light,
     );
   }
 }
@@ -47,8 +60,13 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
     ThemeData theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sbusto'),
-        backgroundColor: theme.colorScheme.inversePrimary,
+        title:
+            [
+              const Text('Home'),
+              const Text("Search"),
+              const Text("Collections"),
+              const Text("Profile"),
+            ][_navbarPageIndex],
         actions: [
           IconButton(
             icon: const Icon(Icons.settings_rounded),
@@ -58,30 +76,33 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
                 context,
                 MaterialPageRoute(
                   builder: (context) {
-                    return Scaffold(
-                      appBar: AppBar(
-                        title: Text('Settings'),
-                        backgroundColor: theme.colorScheme.inversePrimary,
-                      ),
-                      body: Center(child: Text('Settings Page')),
-                    );
+                    return SettingsPage();
                   },
                 ),
               );
             },
           ),
         ],
+        // backgroundColor: theme.appBarTheme.backgroundColor?.withAlpha(200),
+        // forceMaterialTransparency: true,
+        // flexibleSpace: ClipRRect(
+        //   child: BackdropFilter(
+        //     filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        //     child: Container(
+        //       color: theme.appBarTheme.backgroundColor?.withAlpha(100),
+        //     ),
+        //   ),
+        // ),
       ),
-      body: SafeArea(
-        child: IndexedStack(
-          index: _navbarPageIndex,
-          children: const <Widget>[
-            MyHomePage(title: 'Home Page'),
-            Center(child: Text('Search Page')),
-            Center(child: Text('Collections Page')),
-            Center(child: Text('Profile Page')),
-          ],
-        ),
+      // extendBodyBehindAppBar: true,
+      body: IndexedStack(
+        index: _navbarPageIndex,
+        children: const <Widget>[
+          HomePage(title: 'Home'),
+          Center(child: Text('Search Page')),
+          Center(child: Text('Collections Page')),
+          Center(child: Text('Profile Page')),
+        ],
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _navbarPageIndex,
@@ -110,92 +131,98 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
+class HomePage extends StatefulWidget {
+  const HomePage({super.key, required this.title});
   final String title;
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<HomePage> createState() => _HomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  // int _counter = 0;
-
-  // void _incrementCounter() {
-  //   setState(() {
-  //     _counter++;
-  //   });
-  // }
-
+class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     ThemeData theme = Theme.of(context);
     return Consumer<CardDataStoreModel>(
       builder: (context, store, child) {
         if (store.catalog == null) {
-          // store.loadCards();
-          // return const Center(child: CircularProgressIndicator());
           if (store.isLoading) {
             return Center(
               child: Column(
+                spacing: 10,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [CircularProgressIndicator(), Text('Loading...')],
               ),
             );
           } else {
             return Center(
-              child: Column(
-                children: [
-                  FilledButton(
-                    child: Text(
-                      "Load cards (from ${store.areCardsCached ? 'cache' : 'network'})",
-                    ),
-                    onPressed: () {
-                      store.loadCards();
-                    },
+              child: SizedBox(
+                width: 300,
+                height: 150,
+                child: Card(
+                  elevation: 0,
+                  child: Column(
+                    spacing: 10,
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text("No cards loaded", style: theme.textTheme.bodyLarge),
+                      Column(
+                        children: [
+                          TextButton(
+                            child: Text(
+                              "Load cards (from ${store.areCardsCached ? 'cache' : 'network'})",
+                            ),
+                            onPressed: () {
+                              store.loadCards();
+                            },
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              store.clearCatalogFromPrefs();
+                            },
+                            child: Text("Reset cache"),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                  FilledButton(
-                    onPressed: () {
-                      store.clearCatalogFromPrefs();
-                    },
-                    child: Text("Reset cache"),
-                  ),
-                ],
+                ),
               ),
             );
           }
         }
 
-        return ListView(
+        return GridView(
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            childAspectRatio: 0.72,
+          ),
           children: [
             for (final card in store.catalog!) ...[
-              ListTile(
-                title: Text(card.name),
-                subtitle: Text(card.oracleText ?? ""),
-                leading: Image.network(card.imageUris?.png.toString() ?? ""),
-                onTap: () {
-                  print("Tapped on ${card.name}");
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) {
-                        return DebugCardView(card: card);
-                      },
+              Card(
+                child: Stack(
+                  children: [
+                    Ink.image(
+                      image: NetworkImage(card.imageUris?.png.toString() ?? ""),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(10),
+                        onTap: () {
+                          print("Tapped on ${card.name}");
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) {
+                                return DebugCardView(card: card);
+                              },
+                            ),
+                          );
+                        },
+                      ),
                     ),
-                  );
-                },
+                  ],
+                ),
               ),
-              const Divider(),
             ],
           ],
         );

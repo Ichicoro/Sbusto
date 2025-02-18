@@ -14,15 +14,13 @@ class DebugCardView extends StatelessWidget {
         title: Text('Settings'),
         backgroundColor: theme.colorScheme.inversePrimary,
       ),
-      body: Card(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Image.network(card.imageUris?.png.toString() ?? ""),
-            Text(card.name),
-            Text(card.oracleText ?? ""),
-          ],
-        ),
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Image.network(card.imageUris?.png.toString() ?? ""),
+          Text(card.name),
+          Text(card.oracleText ?? ""),
+        ],
       ),
     );
   }

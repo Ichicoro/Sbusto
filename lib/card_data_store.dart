@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:scryfall_api/scryfall_api.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:collection/collection.dart';
+
 class CardDataStoreModel extends ChangeNotifier {
   ScryfallApiClient client = ScryfallApiClient();
   List<MtgCard>? _catalog;
@@ -22,6 +24,14 @@ class CardDataStoreModel extends ChangeNotifier {
       _areCardsCached = value;
       notifyListeners();
     });
+  }
+
+  MtgCard? getCardBySetAndCollector(String set, int collectorNumber) {
+    return _catalog?.firstWhereOrNull(
+      (element) =>
+          element.set == set &&
+          element.collectorNumber == collectorNumber.toString(),
+    );
   }
 
   void _saveCatalogToPrefs() async {
