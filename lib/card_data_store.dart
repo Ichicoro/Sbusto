@@ -9,14 +9,18 @@ import 'package:collection/collection.dart';
 class CardDataStoreModel extends ChangeNotifier {
   ScryfallApiClient client = ScryfallApiClient();
   List<MtgCard>? _catalog;
+  List<MtgSet>? _sets;
   List<MtgCard>? get catalog => _catalog;
+  List<MtgSet>? get sets => _sets;
   bool isLoading = false;
   bool _areCardsCached = false;
   bool get areCardsCached => _areCardsCached;
 
+  static List<String> activeSets = ["AFR", "OTJ"];
+
   Future<bool> checkCardCache() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.containsKey("cards");
+    return prefs.containsKey("cards") && prefs.containsKey("sets");
   }
 
   CardDataStoreModel() {
@@ -60,14 +64,41 @@ class CardDataStoreModel extends ChangeNotifier {
     }
   }
 
+  void _saveSetsToPrefs() async {
+    if (_sets == null) {
+      return;
+    }
+    final prefs = await SharedPreferences.getInstance();
+    final List<String> json =
+        (_sets?.map((item) => jsonEncode(item.toJson())))!.toList();
+    prefs.setStringList("sets", json);
+  }
+
+  Future<List<MtgSet>?> _loadSetsFromPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    final List<String>? json = prefs.getStringList("sets");
+    if (json == null) {
+      return null;
+    }
+    try {
+      final result =
+          json.map((item) => MtgSet.fromJson(jsonDecode(item))).toList();
+      return result;
+    } catch (e) {
+      print(e);
+      return null;
+    }
+  }
+
   void clearCatalogFromPrefs() async {
     final prefs = await SharedPreferences.getInstance();
     prefs.remove("cards");
+    prefs.remove("sets");
     _areCardsCached = false;
     notifyListeners();
   }
 
-  void loadCards() async {
+  void loadData() async {
     // final String response = await rootBundle.loadString('assets/db.json');
     // final data = await json.decode(response);
 
@@ -75,14 +106,17 @@ class CardDataStoreModel extends ChangeNotifier {
     notifyListeners();
 
     _catalog = await _loadCatalogFromPrefs();
-    bool wasEmpty = _catalog == null;
+    _sets = await _loadSetsFromPrefs();
+    bool wasEmpty = _catalog == null || _sets == null;
 
     if (wasEmpty) {
       bool isFinished = false;
       int idx = 0;
+
+      // Load cards
       while (!isFinished) {
         final response = await client.searchCards(
-          "game:paper set:AFR",
+          "game:paper (${activeSets.map((e) => "set:$e").join(" OR ")})",
           page: idx++,
         );
         final catalog = response.data;
@@ -92,16 +126,24 @@ class CardDataStoreModel extends ChangeNotifier {
           isFinished = true;
         }
       }
+
+      for (var set in activeSets) {
+        final response = await client.getSetByCode(set);
+        _sets ??= List<MtgSet>.empty(growable: true);
+        _sets?.add(response);
+      }
     }
 
-    _catalog?.forEach((element) {
-      print(element.toString());
-    });
+    // _catalog?.forEach((element) {
+    //   print(element.toString());
+    // });
 
     isLoading = false;
     _catalog = catalog;
+    _sets = sets;
     if (wasEmpty) {
       _saveCatalogToPrefs();
+      _saveSetsToPrefs();
     }
     notifyListeners();
   }

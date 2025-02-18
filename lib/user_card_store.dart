@@ -31,7 +31,7 @@ class UserCard {
 }
 
 class UserCardStoreModel extends ChangeNotifier {
-  List<UserCard> _cards = [];
+  final List<UserCard> _cards = [];
   List<UserCard> get cards => _cards;
 
   Database? _database;
@@ -64,6 +64,17 @@ CREATE INDEX idx_user_cards_collector ON user_cards(collectorNumber);
 """);
       },
     );
+  }
+
+  int countMtgCardInCollection(MtgCard card) {
+    return _cards
+        .where(
+          (element) =>
+              element.setCode == card.set &&
+              element.collectorNumber == card.collectorNumber.toString() &&
+              element.foil == card.foil,
+        )
+        .length;
   }
 
   void addCardFromMtgCard(MtgCard card) async {
@@ -99,8 +110,8 @@ CREATE INDEX idx_user_cards_collector ON user_cards(collectorNumber);
         where: "id = ?",
         whereArgs: [cardToRemove.id],
       );
+      notifyListeners();
     }
-    notifyListeners();
   }
 
   void addCard(UserCard card) async {
