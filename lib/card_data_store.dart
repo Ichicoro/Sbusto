@@ -30,6 +30,43 @@ class CardDataStoreModel extends ChangeNotifier {
 
   static List<String> activeSets = ["OTJ", "OTP"];
 
+  // https://boardgames.stackexchange.com/a/39305
+  static const double _mythicOrRarePercentage = 1 / 7;
+  static const double _mythicPercentage = 1 / 8;
+  static const double _uncommonPercentage = 1 / 3;
+
+  Rarity getRandomCardRarity({bool onlyRareOrMythic = false}) {
+    final double rarityRoll = Random().nextDouble();
+    if (onlyRareOrMythic) {
+      if (rarityRoll < _mythicPercentage) {
+        return Rarity.rare;
+      } else {
+        return Rarity.mythic;
+      }
+    } else {
+      if (rarityRoll < _mythicOrRarePercentage) {
+        return Rarity.rare;
+      } else if (rarityRoll < (_mythicOrRarePercentage * _mythicPercentage)) {
+        return Rarity.mythic;
+      } else if (rarityRoll < _uncommonPercentage) {
+        return Rarity.uncommon;
+      } else {
+        return Rarity.common;
+      }
+    }
+  }
+
+  bool isValidLandForLandSlot(MtgCard card) {
+    final double landRoll = Random().nextDouble();
+    if (landRoll < 0.5) {
+      return card.typeLine.contains("Land") && card.producedMana?.length == 2;
+    } else {
+      final double fullArtRoll = Random().nextDouble();
+      return card.typeLine.contains("Basic Land") &&
+          card.fullArt == fullArtRoll < 0.5;
+    }
+  }
+
   CardDataStoreModel() {
     Future.delayed(Duration.zero, () {
       checkCardCache().then((value) {
@@ -205,9 +242,9 @@ class CardDataStoreModel extends ChangeNotifier {
     final List<MtgCard> commons =
         cards
             .where(
-              (element) =>
-                  element.rarity == Rarity.common &&
-                  !element.typeLine.contains("Land"),
+              (card) =>
+                  card.rarity == Rarity.common &&
+                  !card.typeLine.contains("Land"),
             )
             .shuffled()
             .take(7) // should be 6 + 1 that can be the list
@@ -216,9 +253,9 @@ class CardDataStoreModel extends ChangeNotifier {
     final List<MtgCard> uncommons =
         cards
             .where(
-              (element) =>
-                  element.rarity == Rarity.uncommon &&
-                  !element.typeLine.contains("Land"),
+              (card) =>
+                  card.rarity == Rarity.uncommon &&
+                  !card.typeLine.contains("Land"),
             )
             .shuffled()
             .take(3)
@@ -226,17 +263,20 @@ class CardDataStoreModel extends ChangeNotifier {
 
     final MtgCard randomAnyRarity =
         cards
-            .where((element) => !element.typeLine.contains("Land"))
+            .where(
+              (card) =>
+                  !card.typeLine.contains("Basic Land") &&
+                  card.rarity == getRandomCardRarity(),
+            )
             .shuffled()
             .first;
 
     final rareOrMythic =
         cards
             .where(
-              (element) =>
-                  (element.rarity == Rarity.rare ||
-                      element.rarity == Rarity.mythic) &&
-                  !element.typeLine.contains("Land"),
+              (card) =>
+                  card.rarity == getRandomCardRarity(onlyRareOrMythic: true) &&
+                  !card.typeLine.contains("Land"),
             )
             .shuffled()
             .first;
@@ -245,23 +285,23 @@ class CardDataStoreModel extends ChangeNotifier {
     final breakingNews =
         _catalog!
             .where(
-              (element) =>
-                  element.set == "otp" &&
-                  element.borderColor == BorderColor.borderless &&
+              (card) =>
+                  card.set == "otp" &&
+                  card.borderColor == BorderColor.borderless &&
                   (!breakingNewsIsRareOrMythic ||
-                      (element.rarity == Rarity.rare ||
-                          element.rarity == Rarity.mythic)),
+                      card.rarity ==
+                          getRandomCardRarity(onlyRareOrMythic: true)),
             )
             .shuffled()
             .first;
 
     final traditionalFoil =
         cards
-            .where(
-              (element) => element.foil && !element.typeLine.contains("Land"),
-            )
+            .where((card) => card.foil && !card.typeLine.contains("Land"))
             .shuffled()
             .first;
+
+    final randomLand = cards.where(isValidLandForLandSlot).shuffled().first;
 
     print("Commons: ${commons.map((e) => e.name)}");
     print("Uncommons: ${uncommons.map((e) => e.name)}");
@@ -271,6 +311,7 @@ class CardDataStoreModel extends ChangeNotifier {
     );
     print("rareOrMythic: ${rareOrMythic.name}");
     print("traditionalFoil: ${traditionalFoil.name}");
+    print("randomLand: ${randomLand.name}");
 
     final List<BoosterCard> drops = [
       ...commons.map((e) => BoosterCard(card: e)),
@@ -279,10 +320,13 @@ class CardDataStoreModel extends ChangeNotifier {
       BoosterCard(card: rareOrMythic),
       BoosterCard(card: breakingNews),
       BoosterCard(card: traditionalFoil, isFoil: true),
+      BoosterCard(card: randomLand, isFoil: rng.nextDouble() > 0.80),
     ];
 
     for (final drop in drops) {
-      print("Dropped: ${drop.card.name} (isFoil: ${drop.isFoil})");
+      print(
+        "Dropped: ${drop.card.name} (rarity: ${drop.card.rarity}, isFoil: ${drop.isFoil})",
+      );
     }
 
     // final List<MtgCard> result = [

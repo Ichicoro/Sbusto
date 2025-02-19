@@ -14,8 +14,6 @@ class CollectionPageView extends StatefulWidget {
 class _CollectionPageViewState extends State<CollectionPageView> {
   @override
   Widget build(BuildContext context) {
-    // ThemeData theme = Theme.of(context);
-    // final cardStore = Provider.of<CardDataStoreModel>(context, listen: true);
     final userCollectionStore = Provider.of<UserCardStoreModel>(
       context,
       listen: true,
