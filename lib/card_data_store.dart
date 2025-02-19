@@ -16,7 +16,7 @@ class CardDataStoreModel extends ChangeNotifier {
   bool _areCardsCached = false;
   bool get areCardsCached => _areCardsCached;
 
-  static List<String> activeSets = ["AFR", "OTJ"];
+  static List<String> activeSets = ["OTJ"];
 
   Future<bool> checkCardCache() async {
     final prefs = await SharedPreferences.getInstance();
@@ -116,7 +116,7 @@ class CardDataStoreModel extends ChangeNotifier {
       // Load cards
       while (!isFinished) {
         final response = await client.searchCards(
-          "game:paper (${activeSets.map((e) => "set:$e").join(" OR ")})",
+          "game:paper unique:prints (${activeSets.map((e) => "set:$e").join(" OR ")})",
           page: idx++,
         );
         final catalog = response.data;
