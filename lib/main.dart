@@ -3,45 +3,77 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:sbusto/all_cards_page.dart';
 import 'package:sbusto/card_data_store.dart';
-import 'package:sbusto/debug_card_view.dart';
+import 'package:sbusto/collection_page.dart';
+import 'package:sbusto/debug_unbox_view.dart';
 import 'package:sbusto/user_card_store.dart';
 
 import 'settings_page.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (context) => CardDataStoreModel()),
-        ChangeNotifierProvider(create: (context) => UserCardStoreModel()),
-      ],
-      child: MyApp(),
+    ChangeNotifierProvider(
+      create: (context) => CardDataStoreModel(),
+      child: ChangeNotifierProvider(
+        create:
+            (context) => UserCardStoreModel(
+              cardDataStore: Provider.of<CardDataStoreModel>(
+                context,
+                listen: false,
+              ),
+            ),
+        child: MyApp(),
+      ),
     ),
   );
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  MyApp({super.key});
+
+  final theme = ThemeData(
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: Colors.red,
+      brightness: Brightness.dark,
+    ),
+    textTheme: GoogleFonts.rubikTextTheme(Typography.whiteMountainView),
+    cardTheme: CardTheme(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      margin: EdgeInsets.all(10),
+    ),
+  );
 
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
+    final cardDataStore = Provider.of<CardDataStoreModel>(
+      context,
+      listen: true,
+    );
+    Widget view;
+    if (cardDataStore.hasLoaded) {
+      view = const NavigationWrapper();
+    } else {
+      // if (!cardDataStore.isLoading) {
+      // Future.delayed(Duration.zero, () {
+      //   cardDataStore.loadData();
+      // });
+      // }
+      view = Scaffold(
+        // color: theme.bottomSheetTheme.backgroundColor,
+        body: Center(
+          child: Column(
+            spacing: 10,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [CircularProgressIndicator(), Text('Loading...')],
+          ),
+        ),
+      );
+    }
     return MaterialApp(
       title: 'Sbusto',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.red,
-          brightness: Brightness.dark,
-        ),
-        textTheme: GoogleFonts.rubikTextTheme(Typography.whiteMountainView),
-        cardTheme: CardTheme(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          margin: EdgeInsets.all(10),
-        ),
-      ),
-      home: const NavigationWrapper(),
+      theme: theme,
+      home: view,
       themeMode: ThemeMode.light,
     );
   }
@@ -59,7 +91,6 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
 
   @override
   Widget build(BuildContext context) {
-    ThemeData theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
         title:
@@ -100,9 +131,9 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
       body: IndexedStack(
         index: _navbarPageIndex,
         children: const <Widget>[
-          Center(child: Text('Home')),
+          DebugUnboxView(),
           AllCardsPage(),
-          Center(child: Text('Collections Page')),
+          CollectionPageView(),
           Center(child: Text('Profile Page')),
         ],
       ),
