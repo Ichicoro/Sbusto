@@ -37,9 +37,21 @@ void main() {
 class MyApp extends StatelessWidget {
   MyApp({super.key});
 
-  final theme = ThemeData(
+  final lightTheme = ThemeData(
     colorScheme: ColorScheme.fromSeed(
-      seedColor: Colors.red,
+      seedColor: Color(0xFF824A0A),
+      brightness: Brightness.light,
+    ),
+    textTheme: GoogleFonts.rubikTextTheme(Typography.whiteMountainView),
+    cardTheme: CardTheme(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      margin: EdgeInsets.all(10),
+    ),
+  );
+
+  final darkTheme = ThemeData(
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: Color(0xFF824A0A),
       brightness: Brightness.dark,
     ),
     textTheme: GoogleFonts.rubikTextTheme(Typography.whiteMountainView),
@@ -76,11 +88,13 @@ class MyApp extends StatelessWidget {
         ),
       );
     }
+
     return MaterialApp(
       title: 'Sbusto',
-      theme: theme,
+      theme: lightTheme,
+      darkTheme: darkTheme,
       home: view,
-      themeMode: ThemeMode.light,
+      themeMode: ThemeMode.system,
     );
   }
 }

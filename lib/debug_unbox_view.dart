@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:sbusto/libs/bouncing_button.dart';
 import 'package:sbusto/libs/rotation_three_d_effect.dart';
 import 'package:sbusto/card_data_store.dart';
 import 'package:sbusto/user_card_store.dart';
@@ -90,73 +91,91 @@ class DebugUnboxViewState extends State<DebugUnboxView> {
           return Center(
             child: Container(
               margin: EdgeInsets.all(15),
-              child: DuringUnboxCardView(
-                card: remainingCards.first,
-                onTap: () async {
-                  print("Unboxing card");
-                  setState(() {
-                    unboxingCardPosition++;
-                    if (unboxingCardPosition >= cards.length) {
-                      status = UnboxingStatus.unpacked;
-                      unboxingCardPosition = 0;
-                    }
-                  });
-                },
+              child: Bouncing(
+                onPressed: () {},
+                scale: 0.01,
+                child: DuringUnboxCardView(
+                  card: remainingCards.first,
+                  onTap: () async {
+                    setState(() {
+                      unboxingCardPosition++;
+                      if (unboxingCardPosition >= cards.length) {
+                        status = UnboxingStatus.unpacked;
+                        unboxingCardPosition = 0;
+                      }
+                    });
+                  },
+                ),
               ),
             ),
           );
         } else {
           return SingleChildScrollView(
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                spacing: 20,
-                children: [
-                  FilledButton.tonal(
-                    child: Text("Save unboxed cards!"),
-                    onPressed: () {
-                      userCardsStore.addCardsFromBooster(cards);
-                      setState(() {
-                        status = UnboxingStatus.idle;
-                      });
-                    },
-                  ),
-                  GridView(
-                    shrinkWrap: true,
-                    physics: NeverScrollableScrollPhysics(),
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      crossAxisSpacing: 0,
-                      mainAxisSpacing: 15,
+            child: Padding(
+              padding: EdgeInsets.all(10),
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  spacing: 20,
+                  children: [
+                    FilledButton.tonal(
+                      child: Text("Save unboxed cards!"),
+                      onPressed: () {
+                        userCardsStore.addCardsFromBooster(cards);
+                        setState(() {
+                          status = UnboxingStatus.idle;
+                        });
+                      },
                     ),
-                    children: [
-                      for (final card in cards)
-                        LayoutBuilder(
-                          builder: (context, constraints) {
-                            return ClipRRect(
-                              borderRadius: BorderRadius.circular(19),
-                              child: Container(
-                                foregroundDecoration:
-                                    card.isFoil
-                                        ? foilDecoration(
-                                          alignment: Alignment.center,
-                                        )
-                                        : null,
-                                child: CachedNetworkImage(
-                                  imageUrl:
-                                      card.card.imageUris?.png.toString() ?? "",
-                                  fadeInDuration: Duration.zero,
-                                  fadeOutDuration: Duration.zero,
+                    GridView(
+                      shrinkWrap: true,
+                      physics: NeverScrollableScrollPhysics(),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 3,
+                        mainAxisSpacing: 5,
+                        crossAxisSpacing: 5,
+                        childAspectRatio: cardAspectRatio,
+                      ),
+                      children: [
+                        for (final card in cards)
+                          LayoutBuilder(
+                            builder: (context, constraints) {
+                              return Bouncing(
+                                onPressed: () {
+                                  showCardPopup(context, card);
+                                },
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(5),
+                                  child: CachedNetworkImage(
+                                    imageBuilder:
+                                        (context, imageProvider) => Container(
+                                          foregroundDecoration:
+                                              card.isFoil
+                                                  ? foilDecoration(
+                                                    alignment: Alignment.center,
+                                                  )
+                                                  : null,
+                                          child: Image(
+                                            image: imageProvider,
+                                            fit: BoxFit.cover,
+                                          ),
+                                        ),
+                                    imageUrl:
+                                        card.card.imageUris?.png.toString() ??
+                                        "",
+                                    fadeInDuration: Duration.zero,
+                                    fadeOutDuration: Duration.zero,
+                                  ),
                                 ),
-                              ),
-                            );
-                          },
-                        ),
-                    ],
-                  ),
-                  // for (final card in cards) DebugCardView(card: card.card),
-                ],
+                              );
+                            },
+                          ),
+                      ],
+                    ),
+                    // for (final card in cards) DebugCardView(card: card.card),
+                  ],
+                ),
               ),
             ),
           );
@@ -203,7 +222,6 @@ class DuringUnboxCardViewState extends State<DuringUnboxCardView> {
       // onPanEnd: (details) => print("Pan end: ${details.velocity}"),
       child: Rotation3DEffect.limitedReturnsInPlace(
         child: (offset) {
-          print(offset);
           return Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,

@@ -3,7 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sbusto/card_data_store.dart';
 import 'package:sbusto/debug_card_view.dart';
+import 'package:sbusto/debug_unbox_view.dart';
+import 'package:sbusto/libs/bouncing_button.dart';
 import 'package:sbusto/user_card_store.dart';
+import 'package:sbusto/utils.dart';
 import 'package:scryfall_api/scryfall_api.dart';
 
 class AllCardsPage extends StatefulWidget {
@@ -15,11 +18,7 @@ class AllCardsPage extends StatefulWidget {
 
 class _AllCardsPageState extends State<AllCardsPage> {
   CachedNetworkImage tryGettingImage(MtgCard card) {
-    // try {
     return CachedNetworkImage(imageUrl: card.imageUris?.small.toString() ?? "");
-    // } catch (ex) {
-    // return Image.asset("assets/mtg_card_back.png");
-    // }
   }
 
   @override
@@ -37,41 +36,7 @@ class _AllCardsPageState extends State<AllCardsPage> {
               ),
             );
           } else {
-            return Center(
-              child: SizedBox(
-                width: 300,
-                height: 150,
-                child: Card(
-                  elevation: 0,
-                  child: Column(
-                    spacing: 10,
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Text("No cards loaded", style: theme.textTheme.bodyLarge),
-                      Column(
-                        children: [
-                          TextButton(
-                            child: Text(
-                              "Load cards (from ${cardStore.areCardsCached ? 'cache' : 'network'})",
-                            ),
-                            onPressed: () {
-                              cardStore.loadData();
-                            },
-                          ),
-                          TextButton(
-                            onPressed: () {
-                              cardStore.clearCatalogFromPrefs();
-                            },
-                            child: Text("Reset cache"),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
+            return Center();
           }
         }
 
@@ -83,17 +48,16 @@ class _AllCardsPageState extends State<AllCardsPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      "${set.name} (${set.code.toUpperCase()})",
-                      style: theme.textTheme.titleMedium,
-                    ),
+                    Text("${set.name} (${set.code.toUpperCase()})"),
                     GridView(
                       shrinkWrap: true,
                       primary: false,
                       physics: const NeverScrollableScrollPhysics(),
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 3,
-                        childAspectRatio: 0.7475,
+                        childAspectRatio: cardAspectRatio,
+                        mainAxisSpacing: 5,
+                        crossAxisSpacing: 5,
                       ),
                       children:
                           cardStore.catalog!
@@ -101,55 +65,35 @@ class _AllCardsPageState extends State<AllCardsPage> {
                               .map((card) {
                                 final image = tryGettingImage(card);
 
-                                return Card(
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(5),
-                                    child: Stack(
-                                      children: [
-                                        // FadeInImage(
-                                        //   imageErrorBuilder:
-                                        //       (context, error, stackTrace) =>
-                                        //           Image.asset(
-                                        //             "assets/mtg_card_back.png",
-                                        //           ),
-                                        //   placeholder: AssetImage(
-                                        //     "assets/mtg_card_back.png",
-                                        //   ),
-                                        //   image: image.image,
-                                        // ),
-                                        CachedNetworkImage(
+                                return LayoutBuilder(
+                                  builder: (context, constraints) {
+                                    return Bouncing(
+                                      onPressed: () {
+                                        showCardPopup(
+                                          context,
+                                          BoosterCard(card: card),
+                                        );
+                                      },
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(5),
+                                        child: CachedNetworkImage(
+                                          imageBuilder:
+                                              (context, imageProvider) =>
+                                                  Container(
+                                                    child: Image(
+                                                      image: imageProvider,
+                                                      fit: BoxFit.cover,
+                                                    ),
+                                                  ),
                                           imageUrl:
-                                              card.imageUris?.small
-                                                  .toString() ??
+                                              card.imageUris?.png.toString() ??
                                               "",
-                                          placeholder:
-                                              (context, url) => Image.asset(
-                                                "assets/mtg_card_back.png",
-                                              ),
+                                          fadeInDuration: Duration.zero,
+                                          fadeOutDuration: Duration.zero,
                                         ),
-                                        Ink(
-                                          child: InkWell(
-                                            borderRadius: BorderRadius.circular(
-                                              10,
-                                            ),
-                                            onTap: () {
-                                              print("Tapped on ${card.name}");
-                                              Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                  builder: (context) {
-                                                    return DebugCardView(
-                                                      card: card,
-                                                    );
-                                                  },
-                                                ),
-                                              );
-                                            },
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
+                                      ),
+                                    );
+                                  },
                                 );
                               })
                               .toList(),

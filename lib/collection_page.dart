@@ -2,8 +2,12 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:sbusto/card_data_store.dart' show BoosterCard;
+import 'package:sbusto/debug_card_view.dart';
+import 'package:sbusto/libs/bouncing_button.dart';
 // import 'package:sbusto/card_data_store.dart';
 import 'package:sbusto/user_card_store.dart';
+import 'package:sbusto/utils.dart';
 
 class CollectionPageView extends StatefulWidget {
   const CollectionPageView({super.key});
@@ -23,27 +27,36 @@ class _CollectionPageViewState extends State<CollectionPageView> {
     print(userCollectionStore.cards.length);
     return Scaffold(
       body: SingleChildScrollView(
-        child: Column(
-          children: [
-            Text("Your collection: ${userCollectionStore.cards.length} cards"),
-            GridView(
-              shrinkWrap: true,
-              primary: false,
-              physics: NeverScrollableScrollPhysics(),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                childAspectRatio: 0.745,
+        child: Padding(
+          padding: EdgeInsets.all(10),
+          child: Column(
+            children: [
+              Text(
+                "Your collection: ${userCollectionStore.cards.length} cards",
               ),
-              children: [
-                for (final userCard in userCollectionStore.cardsWithoutDupes
-                    .sorted(
-                      (a, b) =>
-                          a.cardData?.name.compareTo(b.cardData?.name ?? "") ??
-                          0,
-                    )) ...[UserCardView(userCard: userCard)],
-              ],
-            ),
-          ],
+              GridView(
+                shrinkWrap: true,
+                primary: false,
+                physics: NeverScrollableScrollPhysics(),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  mainAxisSpacing: 5,
+                  crossAxisSpacing: 5,
+                  childAspectRatio: cardAspectRatio,
+                ),
+                children: [
+                  for (final userCard in userCollectionStore.cardsWithoutDupes
+                      .sorted(
+                        (a, b) =>
+                            a.cardData?.name.compareTo(
+                              b.cardData?.name ?? "",
+                            ) ??
+                            0,
+                      )) ...[UserCardView(userCard: userCard)],
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -73,7 +86,13 @@ class UserCardView extends StatelessWidget {
       foilness: UserCardFoilness.foil,
     );
 
-    return Card(
+    return Bouncing(
+      onPressed: () {
+        showCardPopup(
+          context,
+          BoosterCard(card: userCard.cardData!, isFoil: false),
+        );
+      },
       child: Stack(
         children: [
           ClipRRect(
@@ -96,17 +115,9 @@ class UserCardView extends StatelessWidget {
                   children: [
                     Container(
                       padding: EdgeInsets.fromLTRB(3, 1, 3, 1),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Color.fromRGBO(167, 154, 239, 1),
-                            Color.fromRGBO(102, 227, 247, 1),
-                            Color.fromRGBO(160, 252, 204, 1),
-                            Color.fromRGBO(242, 241, 183, 1),
-                            Color.fromRGBO(255, 183, 223, 1),
-                          ],
-                          transform: GradientRotation(0.5),
-                        ),
+                      decoration: foilDecoration(
+                        blendMode: BlendMode.src,
+                        opacity: 1,
                       ),
                       child: Text(
                         "$inCollectionCountFoil",
@@ -120,9 +131,9 @@ class UserCardView extends StatelessWidget {
                       padding: EdgeInsets.fromLTRB(3, 1, 3, 1),
                       color: theme.colorScheme.secondaryContainer,
                       child: Text(
-                        "$inCollectionCountFoil",
+                        "$inCollectionCountNonFoil",
                         style: TextStyle(
-                          color: Colors.white,
+                          color: theme.colorScheme.inverseSurface,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
