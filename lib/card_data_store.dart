@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:sbusto/user_card_store.dart';
 import 'package:scryfall_api/scryfall_api.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

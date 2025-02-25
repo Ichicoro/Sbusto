@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -31,7 +32,7 @@ class _CollectionPageViewState extends State<CollectionPageView> {
               physics: NeverScrollableScrollPhysics(),
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 3,
-                childAspectRatio: 0.52,
+                childAspectRatio: 0.745,
               ),
               children: [
                 for (final userCard in userCollectionStore.cardsWithoutDupes
@@ -57,23 +58,80 @@ class UserCardView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // final cardStore = Provider.of<CardDataStoreModel>(context, listen: true);
+    final theme = Theme.of(context);
     final userCollectionStore = Provider.of<UserCardStoreModel>(
       context,
       listen: true,
     );
 
-    final inCollectionCount = userCollectionStore.getCardCount(userCard);
+    final inCollectionCountNonFoil = userCollectionStore.getCardCount(
+      userCard,
+      foilness: UserCardFoilness.nonFoil,
+    );
+    final inCollectionCountFoil = userCollectionStore.getCardCount(
+      userCard,
+      foilness: UserCardFoilness.foil,
+    );
 
     return Card(
-      child: Column(
+      child: Stack(
         children: [
-          Image.network(
-            userCard.cardData?.imageUris?.normal.toString() ??
-                "http://google.com/favicon.ico",
+          ClipRRect(
+            borderRadius: BorderRadius.circular(5),
+            child: CachedNetworkImage(
+              imageUrl: userCard.cardData?.imageUris?.normal.toString() ?? "",
+              placeholder:
+                  (context, url) => Image.asset("assets/mtg_card_back.png"),
+            ),
           ),
-          Text(userCard.cardData?.name ?? "no card"),
-          Text("In collection: $inCollectionCount"),
+          Positioned(
+            bottom: 4,
+            left: 4,
+            child: Container(
+              // color: Colors.black.withValues(alpha: 0.5),
+              margin: EdgeInsets.fromLTRB(4, 1, 4, 3),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(5),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.fromLTRB(3, 1, 3, 1),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Color.fromRGBO(167, 154, 239, 1),
+                            Color.fromRGBO(102, 227, 247, 1),
+                            Color.fromRGBO(160, 252, 204, 1),
+                            Color.fromRGBO(242, 241, 183, 1),
+                            Color.fromRGBO(255, 183, 223, 1),
+                          ],
+                          transform: GradientRotation(0.5),
+                        ),
+                      ),
+                      child: Text(
+                        "$inCollectionCountFoil",
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    Container(
+                      padding: EdgeInsets.fromLTRB(3, 1, 3, 1),
+                      color: theme.colorScheme.secondaryContainer,
+                      child: Text(
+                        "$inCollectionCountFoil",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );

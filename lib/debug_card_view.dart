@@ -1,5 +1,7 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:sbusto/libs/rotation_three_d_effect.dart';
 import 'package:sbusto/card_data_store.dart';
 import 'package:sbusto/user_card_store.dart';
 import 'package:scryfall_api/scryfall_api.dart';
@@ -21,8 +23,34 @@ class DebugCardView extends StatelessWidget {
           ),
           body: Column(
             mainAxisAlignment: MainAxisAlignment.center,
+            spacing: 10,
             children: [
-              Image.network(card.imageUris?.png.toString() ?? ""),
+              Container(
+                padding: EdgeInsets.all(25),
+                child: Rotation3DEffect.limitedReturnsInPlace(
+                  returnInPlaceDuration: Duration(milliseconds: 150),
+                  child:
+                      (offset) => ClipRRect(
+                        borderRadius: BorderRadius.circular(18),
+                        child: CachedNetworkImage(
+                          imageUrl: card.imageUris?.png.toString() ?? "",
+                          placeholder:
+                              (context, url) => Stack(
+                                children: [
+                                  Image.asset("assets/mtg_card_back.png"),
+                                  Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    mainAxisSize: MainAxisSize.max,
+                                    children: [CircularProgressIndicator()],
+                                  ),
+                                ],
+                              ),
+                        ),
+                      ),
+                ),
+              ),
               Text(card.name),
               Text(card.oracleText ?? ""),
             ],

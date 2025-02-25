@@ -6,6 +6,8 @@ import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:uuid/uuid.dart';
 
+enum UserCardFoilness { nonFoil, foil, both }
+
 class UserCard {
   final String id;
   final String setCode;
@@ -189,13 +191,20 @@ CREATE INDEX idx_user_cards_collector ON user_cards(collectorNumber);
     notifyListeners();
   }
 
-  int getCardCount(UserCard card, {bool onlySameFoilness = false}) {
+  int getCardCount(
+    UserCard card, {
+    UserCardFoilness foilness = UserCardFoilness.both,
+  }) {
     return _cards
         .where(
           (element) =>
               element.setCode == card.setCode &&
               element.collectorNumber == card.collectorNumber &&
-              (element.foil == card.foil || !onlySameFoilness),
+              (foilness == UserCardFoilness.both
+                  ? element.foil == card.foil
+                  : (foilness == UserCardFoilness.foil
+                      ? element.foil
+                      : !element.foil)),
         )
         .length;
   }

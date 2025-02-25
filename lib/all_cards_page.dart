@@ -1,8 +1,10 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sbusto/card_data_store.dart';
 import 'package:sbusto/debug_card_view.dart';
 import 'package:sbusto/user_card_store.dart';
+import 'package:scryfall_api/scryfall_api.dart';
 
 class AllCardsPage extends StatefulWidget {
   const AllCardsPage({super.key});
@@ -12,6 +14,14 @@ class AllCardsPage extends StatefulWidget {
 }
 
 class _AllCardsPageState extends State<AllCardsPage> {
+  CachedNetworkImage tryGettingImage(MtgCard card) {
+    // try {
+    return CachedNetworkImage(imageUrl: card.imageUris?.small.toString() ?? "");
+    // } catch (ex) {
+    // return Image.asset("assets/mtg_card_back.png");
+    // }
+  }
+
   @override
   Widget build(BuildContext context) {
     ThemeData theme = Theme.of(context);
@@ -83,39 +93,66 @@ class _AllCardsPageState extends State<AllCardsPage> {
                       physics: const NeverScrollableScrollPhysics(),
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 3,
-                        childAspectRatio: 0.72,
+                        childAspectRatio: 0.7475,
                       ),
-                      children: [
-                        for (final card in cardStore.catalog!.where(
-                          (card) => card.setId == set.id,
-                        )) ...[
-                          Card(
-                            child: Stack(
-                              children: [
-                                Ink.image(
-                                  image: NetworkImage(
-                                    card.imageUris?.small.toString() ?? "",
-                                  ),
-                                  child: InkWell(
-                                    borderRadius: BorderRadius.circular(10),
-                                    onTap: () {
-                                      print("Tapped on ${card.name}");
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) {
-                                            return DebugCardView(card: card);
-                                          },
+                      children:
+                          cardStore.catalog!
+                              .where((card) => card.setId == set.id)
+                              .map((card) {
+                                final image = tryGettingImage(card);
+
+                                return Card(
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(5),
+                                    child: Stack(
+                                      children: [
+                                        // FadeInImage(
+                                        //   imageErrorBuilder:
+                                        //       (context, error, stackTrace) =>
+                                        //           Image.asset(
+                                        //             "assets/mtg_card_back.png",
+                                        //           ),
+                                        //   placeholder: AssetImage(
+                                        //     "assets/mtg_card_back.png",
+                                        //   ),
+                                        //   image: image.image,
+                                        // ),
+                                        CachedNetworkImage(
+                                          imageUrl:
+                                              card.imageUris?.small
+                                                  .toString() ??
+                                              "",
+                                          placeholder:
+                                              (context, url) => Image.asset(
+                                                "assets/mtg_card_back.png",
+                                              ),
                                         ),
-                                      );
-                                    },
+                                        Ink(
+                                          child: InkWell(
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
+                                            onTap: () {
+                                              print("Tapped on ${card.name}");
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) {
+                                                    return DebugCardView(
+                                                      card: card,
+                                                    );
+                                                  },
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ],
+                                );
+                              })
+                              .toList(),
                     ),
                   ],
                 ),
